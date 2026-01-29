@@ -81,8 +81,7 @@ AI Resume Builder – Simple is an Android application designed to help users cr
 ## 📲 Project Setup Instructions
 
 ### 1️⃣ Clone the Repository
-  ```bash
-  git clone https://github.com/your-username/ai-resume-builder.git
+   git clone https://github.com/your-username/ai-resume-builder.git
 
 ### 2️⃣ Open in Android Studio
 Open Android Studio
@@ -90,14 +89,11 @@ Click Open
 Select the cloned project folder
 
 ### 3️⃣ Firebase Setup (Required)
-
 1. Go to Firebase Console
 2. Create a new project
 3. Add an Android App
 4. Download google-services.json
-5. Place it inside:
-  ```bash
-   app/google-services.json
+5. Place it inside: app/google-services.json
 
 ### 4️⃣ Enable Firebase Services
 In Firebase Console:
@@ -105,11 +101,9 @@ Enable Authentication → Google Sign-In
 Enable Firestore Database
 
 ### Edit Constants.java
-   ```bash
-    public static final String GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
+   public static final String GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
 
 ### Edit strings.xml:
-  ```bash
   <!-- Dummy AdMob Test IDs -->
   <string name="app_id">ca-app-pub-3940256099942544~3347511713</string>
   <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>

@@ -81,7 +81,7 @@ AI Resume Builder – Simple is an Android application designed to help users cr
 ## 📲 Project Setup Instructions
 
 ### 1️⃣ Clone the Repository
-    ```bash
+    
     git clone https://github.com/your-username/ai-resume-builder.git
 
 ### 2️⃣ Open in Android Studio

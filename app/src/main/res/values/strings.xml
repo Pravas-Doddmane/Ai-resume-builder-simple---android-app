@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name" translatable="false">AI Resume</string>
+    <string name="Pass_family_doddmane" translatable="false">Pass Family</string>
+
+    <string name="privacy_policy_login_text">By signing in, you agree to our
+        <a href="add your URL">Privacy Policy</a>.
+    </string>
+
+    <!--dummy ad id-->
+
+    <string name="app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
+    <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
+    <string name="default_web_client_id">add yours</string>
+
+</resources>

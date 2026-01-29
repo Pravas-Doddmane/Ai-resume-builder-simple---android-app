@@ -122,6 +122,6 @@ Enable Firestore Database
 This app includes a Privacy Policy page hosted separately.
 
 # 👨‍💻 Developer
-Pravas D S
-Independent Android Developer
-[play store](https://play.google.com/store/apps/developer?id=PASS+FAMILY)
+- Pravas D S
+- Independent Android Developer
+- [play store](https://play.google.com/store/apps/developer?id=PASS+FAMILY)

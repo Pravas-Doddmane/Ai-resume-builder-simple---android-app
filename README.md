@@ -106,7 +106,7 @@ Enable Firestore Database
     public static final String GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
 
 ### Edit strings.xml:
-    ```bash
+    
      <!-- Dummy AdMob Test IDs -->
      <string name="app_id">ca-app-pub-3940256099942544~3347511713</string>
      <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>

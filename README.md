@@ -81,7 +81,8 @@ AI Resume Builder – Simple is an Android application designed to help users cr
 ## 📲 Project Setup Instructions
 
 ### 1️⃣ Clone the Repository
-   git clone https://github.com/your-username/ai-resume-builder.git
+    ```bash
+    git clone https://github.com/your-username/ai-resume-builder.git
 
 ### 2️⃣ Open in Android Studio
 Open Android Studio
@@ -101,19 +102,21 @@ Enable Authentication → Google Sign-In
 Enable Firestore Database
 
 ### Edit Constants.java
-   public static final String GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
+    
+    public static final String GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
 
 ### Edit strings.xml:
-  <!-- Dummy AdMob Test IDs -->
-  <string name="app_id">ca-app-pub-3940256099942544~3347511713</string>
-  <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
-  <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
-  <!--Google Sign-In Client ID-->
-  <string name="default_web_client_id">ADD_YOUR_WEB_CLIENT_ID_HERE</string>
-  <string name="privacy_policy_login_text">
-   By signing in, you agree to our
-  <a href="ADD_YOUR_PRIVACY_POLICY_URL">Privacy Policy</a>.
-  </string>
+    ```bash
+     <!-- Dummy AdMob Test IDs -->
+     <string name="app_id">ca-app-pub-3940256099942544~3347511713</string>
+     <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
+     <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
+     <!--Google Sign-In Client ID-->
+     <string name="default_web_client_id">ADD_YOUR_WEB_CLIENT_ID_HERE</string>
+     <string name="privacy_policy_login_text">
+     By signing in, you agree to our
+     <a href="ADD_YOUR_PRIVACY_POLICY_URL">Privacy Policy</a>.
+     </string>
 
 ### Privacy Policy
 This app includes a Privacy Policy page hosted separately.

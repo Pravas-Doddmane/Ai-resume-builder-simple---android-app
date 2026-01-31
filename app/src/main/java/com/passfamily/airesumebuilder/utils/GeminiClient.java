@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class GeminiClient {
-    private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent";
+    private static final String GEMINI_API_URL = "";
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
 
     private OkHttpClient client;

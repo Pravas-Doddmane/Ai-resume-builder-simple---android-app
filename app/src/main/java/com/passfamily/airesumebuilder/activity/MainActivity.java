@@ -177,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void openPrivacyPolicy() {
         // IMPORTANT: Replace with your actual privacy policy URL
-        String url = "Your URL for privacy policy";
+        String url = "https://ai-resume-builder-privacy-policy.vercel.app/";
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         try {
             startActivity(intent);

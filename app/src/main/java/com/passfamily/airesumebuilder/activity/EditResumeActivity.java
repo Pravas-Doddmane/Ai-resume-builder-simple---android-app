@@ -1,5 +1,6 @@
 package com.passfamily.airesumebuilder.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -190,16 +191,21 @@ public class EditResumeActivity extends AppCompatActivity {
             Toast.makeText(EditResumeActivity.this, "Saving...", Toast.LENGTH_SHORT).show();
 
             firestoreManager.updateResume(currentResume, new FirestoreManager.FirestoreCallback<Void>() {
+                // inside onSuccess() of updateResume()
                 @Override
                 public void onSuccess(Void result) {
                     runOnUiThread(() -> {
-                        // Show success message
-                        Toast.makeText(EditResumeActivity.this, "Resume saved successfully!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(EditResumeActivity.this,
+                                "Resume saved successfully!", Toast.LENGTH_SHORT).show();
 
-                        // Show interstitial ad then finish
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra(Constants.EXTRA_RESUME_ID, resumeId);
+                        setResult(RESULT_OK, resultIntent);
+
                         showInterstitialAndFinish();
                     });
                 }
+
 
                 @Override
                 public void onError(String error) {
@@ -213,27 +219,23 @@ public class EditResumeActivity extends AppCompatActivity {
 
     private void showInterstitialAndFinish() {
         if (interstitialAd != null) {
-            AdHelper.showInterstitialAd(this, interstitialAd, new AdHelper.InterstitialAdShowCallback() {
-                @Override
-                public void onAdDismissed() {
-                    // Ad was shown and dismissed, now finish activity
-                    Log.d(TAG, "Interstitial ad dismissed, finishing activity");
-                    finish();
-                }
+            AdHelper.showInterstitialAd(this, interstitialAd,
+                    new AdHelper.InterstitialAdShowCallback() {
+                        @Override
+                        public void onAdDismissed() {
+                            finish();
+                        }
 
-                @Override
-                public void onAdFailedToShow(String error) {
-                    // Ad failed to show, still finish activity
-                    Log.e(TAG, "Failed to show interstitial ad: " + error);
-                    finish();
-                }
-            });
+                        @Override
+                        public void onAdFailedToShow(String error) {
+                            finish();
+                        }
+                    });
         } else {
-            // No ad loaded, directly finish activity
-            Log.d(TAG, "No interstitial ad available, finishing activity directly");
             finish();
         }
     }
+
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {

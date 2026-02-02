@@ -137,7 +137,8 @@ public class FirestoreManager {
     // ========== USER MONTHLY LIMIT METHODS ==========
 
     /**
-     * Get the user's monthly resume count and check if 30 days have passed since first resume
+     * Get the user's monthly resume count for current 30-day period
+     * FIXED: Each user gets exactly 30 days from their first resume
      */
     public void getUserMonthlyResumeCount(String userId, FirestoreCallback<MonthlyLimitInfo> callback) {
         String limitDocId = userId + "_monthly_limit";
@@ -152,33 +153,32 @@ public class FirestoreManager {
                         DocumentSnapshot document = task.getResult();
 
                         if (document.exists()) {
-                            Long count = document.getLong("count");
-                            Long firstResumeTimestamp = document.getLong("firstResumeTimestamp");
+                            Long periodStartTimestamp = document.getLong("periodStartTimestamp");
+                            Long currentCount = document.getLong("count");
 
-                            int resumeCount = (count != null) ? count.intValue() : 0;
-                            long firstResume = (firstResumeTimestamp != null) ? firstResumeTimestamp : System.currentTimeMillis();
+                            int resumeCount = (currentCount != null) ? currentCount.intValue() : 0;
+                            long periodStart = (periodStartTimestamp != null) ? periodStartTimestamp : 0;
 
-                            // Check if 30 days have passed since first resume
+                            // Check if 30 days have passed since period start
                             long currentTime = System.currentTimeMillis();
-                            long daysPassed = (currentTime - firstResume) / (1000 * 60 * 60 * 24);
+                            long daysPassed = (currentTime - periodStart) / (1000 * 60 * 60 * 24);
 
-                            Log.d(TAG, "Monthly count: " + resumeCount + ", Days passed: " + daysPassed);
+                            Log.d(TAG, "Monthly count: " + resumeCount + ", Days passed since period start: " + daysPassed + ", Period start: " + new Date(periodStart));
 
                             if (daysPassed >= 30) {
-                                // 30 days have passed, reset the counter
-                                Log.d(TAG, "30 days passed, resetting counter");
-                                resetMonthlyLimit(userId, callback);
+                                // 30 days have passed, user gets fresh period
+                                Log.d(TAG, "30 days passed since period start, creating new period");
+                                createNewMonthlyPeriod(userId, callback);
                             } else {
                                 // Still within 30 days
                                 long daysRemaining = 30 - daysPassed;
-                                MonthlyLimitInfo info = new MonthlyLimitInfo(resumeCount, daysRemaining, firstResume);
+                                MonthlyLimitInfo info = new MonthlyLimitInfo(resumeCount, daysRemaining, periodStart);
                                 callback.onSuccess(info);
                             }
                         } else {
-                            // No document exists, meaning 0 resumes created
-                            Log.d(TAG, "No document found, count = 0");
-                            MonthlyLimitInfo info = new MonthlyLimitInfo(0, 30, System.currentTimeMillis());
-                            callback.onSuccess(info);
+                            // No document exists, meaning user hasn't created any resume yet
+                            Log.d(TAG, "No document found, user hasn't started any period yet");
+                            createNewMonthlyPeriod(userId, callback);
                         }
                     } else {
                         Log.e(TAG, "Error fetching monthly count: " + task.getException());
@@ -188,97 +188,113 @@ public class FirestoreManager {
     }
 
     /**
-     * Reset the monthly limit counter
+     * Create a fresh 30-day period for user
      */
-    private void resetMonthlyLimit(String userId, FirestoreCallback<MonthlyLimitInfo> callback) {
+    private void createNewMonthlyPeriod(String userId, FirestoreCallback<MonthlyLimitInfo> callback) {
         String limitDocId = userId + "_monthly_limit";
 
+        long currentTime = System.currentTimeMillis();
+
         Map<String, Object> data = new HashMap<>();
-        data.put("count", 0);
+        data.put("count", 0); // Start with 0 resumes in new period
         data.put("userId", userId);
-        data.put("firstResumeTimestamp", System.currentTimeMillis());
-        data.put("lastResetTimestamp", System.currentTimeMillis());
-        data.put("lastUpdated", System.currentTimeMillis());
+        data.put("periodStartTimestamp", currentTime); // Start of new 30-day period
+        data.put("lastUpdated", currentTime);
 
         db.collection(COLLECTION_USER_LIMITS)
                 .document(limitDocId)
                 .set(data)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Monthly limit reset successfully");
-                    MonthlyLimitInfo info = new MonthlyLimitInfo(0, 30, System.currentTimeMillis());
+                    Log.d(TAG, "New 30-day period started for user: " + userId);
+                    MonthlyLimitInfo info = new MonthlyLimitInfo(0, 30, currentTime);
                     callback.onSuccess(info);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error resetting monthly limit: ", e);
-                    callback.onError("Error resetting limit");
+                    Log.e(TAG, "Error creating new monthly period: ", e);
+                    callback.onError("Error creating new period");
                 });
     }
 
     /**
      * Update the user's monthly count after creating a resume
+     * FIXED: Properly handles 30-day period reset
      */
     private void updateUserMonthlyCount(String userId) {
         String limitDocId = userId + "_monthly_limit";
 
         Log.d(TAG, "Updating monthly count for: " + limitDocId);
 
+        // First, check current status to see if we need to start new period
         db.collection(COLLECTION_USER_LIMITS)
                 .document(limitDocId)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         DocumentSnapshot document = task.getResult();
-
                         long currentTime = System.currentTimeMillis();
 
                         if (document.exists()) {
-                            // Check if need to reset
-                            Long firstResumeTimestamp = document.getLong("firstResumeTimestamp");
-                            long firstResume = (firstResumeTimestamp != null) ? firstResumeTimestamp : currentTime;
-                            long daysPassed = (currentTime - firstResume) / (1000 * 60 * 60 * 24);
+                            Long periodStartTimestamp = document.getLong("periodStartTimestamp");
+                            Long currentCount = document.getLong("count");
 
-                            int newCount;
-                            long newFirstResumeTimestamp;
+                            long periodStart = (periodStartTimestamp != null) ? periodStartTimestamp : currentTime;
+
+                            // Check if we're still within the 30-day period
+                            long daysPassed = (currentTime - periodStart) / (1000 * 60 * 60 * 24);
 
                             if (daysPassed >= 30) {
-                                // Reset counter
-                                newCount = 1;
-                                newFirstResumeTimestamp = currentTime;
+                                // Period expired, start fresh period with count = 1
+                                Log.d(TAG, "Period expired, starting fresh 30-day period");
+                                Map<String, Object> freshData = new HashMap<>();
+                                freshData.put("count", 1);
+                                freshData.put("userId", userId);
+                                freshData.put("periodStartTimestamp", currentTime);
+                                freshData.put("lastUpdated", currentTime);
+
+                                db.collection(COLLECTION_USER_LIMITS)
+                                        .document(limitDocId)
+                                        .set(freshData)
+                                        .addOnSuccessListener(aVoid -> {
+                                            Log.d(TAG, "New period started with count = 1");
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Log.e(TAG, "Error starting new period: ", e);
+                                        });
                             } else {
-                                // Increment existing count
-                                Long currentCount = document.getLong("count");
-                                newCount = (currentCount != null) ? currentCount.intValue() + 1 : 1;
-                                newFirstResumeTimestamp = firstResume;
+                                // Still within period, increment count
+                                int newCount = (currentCount != null) ? currentCount.intValue() + 1 : 1;
+
+                                Map<String, Object> updateData = new HashMap<>();
+                                updateData.put("count", newCount);
+                                updateData.put("lastUpdated", currentTime);
+
+                                // Keep the original periodStartTimestamp
+                                updateData.put("periodStartTimestamp", periodStartTimestamp);
+
+                                db.collection(COLLECTION_USER_LIMITS)
+                                        .document(limitDocId)
+                                        .update(updateData)
+                                        .addOnSuccessListener(aVoid -> {
+                                            Log.d(TAG, "Monthly count incremented to: " + newCount);
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Log.e(TAG, "Error updating monthly count: ", e);
+                                        });
                             }
-
-                            Map<String, Object> data = new HashMap<>();
-                            data.put("count", newCount);
-                            data.put("userId", userId);
-                            data.put("firstResumeTimestamp", newFirstResumeTimestamp);
-                            data.put("lastUpdated", currentTime);
-
-                            db.collection(COLLECTION_USER_LIMITS)
-                                    .document(limitDocId)
-                                    .set(data)
-                                    .addOnSuccessListener(aVoid -> {
-                                        Log.d(TAG, "Monthly count updated to: " + newCount);
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Log.e(TAG, "Error updating monthly count: ", e);
-                                    });
                         } else {
-                            // Create new document with count = 1 and set first resume timestamp
+                            // No document exists, create one with count = 1 (first resume starts the period)
+                            Log.d(TAG, "No document, creating first period with count = 1");
                             Map<String, Object> data = new HashMap<>();
                             data.put("count", 1);
                             data.put("userId", userId);
-                            data.put("firstResumeTimestamp", currentTime);
+                            data.put("periodStartTimestamp", currentTime); // First resume starts the 30-day period
                             data.put("lastUpdated", currentTime);
 
                             db.collection(COLLECTION_USER_LIMITS)
                                     .document(limitDocId)
                                     .set(data)
                                     .addOnSuccessListener(aVoid -> {
-                                        Log.d(TAG, "Monthly count initialized to: 1");
+                                        Log.d(TAG, "Monthly count initialized to: 1 with new 30-day period");
                                     })
                                     .addOnFailureListener(e -> {
                                         Log.e(TAG, "Error initializing monthly count: ", e);
@@ -296,12 +312,12 @@ public class FirestoreManager {
     public static class MonthlyLimitInfo {
         private int count;
         private long daysRemaining;
-        private long firstResumeTimestamp;
+        private long periodStartTimestamp;
 
-        public MonthlyLimitInfo(int count, long daysRemaining, long firstResumeTimestamp) {
+        public MonthlyLimitInfo(int count, long daysRemaining, long periodStartTimestamp) {
             this.count = count;
             this.daysRemaining = daysRemaining;
-            this.firstResumeTimestamp = firstResumeTimestamp;
+            this.periodStartTimestamp = periodStartTimestamp;
         }
 
         public int getCount() {
@@ -312,13 +328,13 @@ public class FirestoreManager {
             return daysRemaining;
         }
 
-        public long getFirstResumeTimestamp() {
-            return firstResumeTimestamp;
+        public long getPeriodStartTimestamp() {
+            return periodStartTimestamp;
         }
 
         public String getResetDateString() {
             Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(firstResumeTimestamp);
+            calendar.setTimeInMillis(periodStartTimestamp);
             calendar.add(Calendar.DAY_OF_YEAR, 30);
             SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
             return sdf.format(calendar.getTime());

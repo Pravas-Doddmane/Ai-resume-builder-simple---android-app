@@ -19,6 +19,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
@@ -50,6 +52,18 @@ public class GeneratedResumeActivity extends AppCompatActivity {
 
     // Add this at the end of onCreate() method in GeneratedResumeActivity
     private AdView bannerAdView;
+
+    private final ActivityResultLauncher<Intent> editResumeLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() == RESULT_OK) {
+                            lastGeneratedPdfPath = null; // force fresh PDF
+                            loadResume(); // reload edited content
+                        }
+                    }
+            );
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,9 +124,12 @@ public class GeneratedResumeActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnEdit.setOnClickListener(v -> {
-            Intent intent = new Intent(GeneratedResumeActivity.this, EditResumeActivity.class);
+            Intent intent = new Intent(
+                    GeneratedResumeActivity.this,
+                    EditResumeActivity.class
+            );
             intent.putExtra(Constants.EXTRA_RESUME_ID, resumeId);
-            startActivity(intent);
+            editResumeLauncher.launch(intent); // ✅ NOT startActivity()
         });
 
         btnDownload.setOnClickListener(v -> checkPermissionsAndDownload());
@@ -241,39 +258,32 @@ public class GeneratedResumeActivity extends AppCompatActivity {
             return;
         }
 
-        if (lastGeneratedPdfPath != null) {
-            File pdfFile = new File(lastGeneratedPdfPath);
-            if (pdfFile.exists()) {
-                sharePdfFile(pdfFile);
-                return;
-            }
-        }
+        // Force regenerate if edited
+        lastGeneratedPdfPath = null;
 
-        Toast.makeText(this, "Generating PDF to share...", Toast.LENGTH_SHORT).show();
-
+        Toast.makeText(this, "Generating updated PDF...", Toast.LENGTH_SHORT).show();
         PDFGenerator.generateStandardPDF(
-                GeneratedResumeActivity.this,
+                this,
                 currentResume,
                 new PDFGenerator.PDFCallback() {
                     @Override
                     public void onSuccess(String filePath) {
-                        runOnUiThread(() -> {
-                            lastGeneratedPdfPath = filePath;
-                            File pdfFile = new File(filePath);
-                            sharePdfFile(pdfFile);
-                        });
+                        lastGeneratedPdfPath = filePath;
+                        sharePdfFile(new File(filePath));
                     }
 
                     @Override
                     public void onError(String error) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(GeneratedResumeActivity.this,
-                                    "Error generating PDF: " + error, Toast.LENGTH_LONG).show();
-                        });
+                        Toast.makeText(
+                                GeneratedResumeActivity.this,
+                                error,
+                                Toast.LENGTH_LONG
+                        ).show();
                     }
                 }
         );
     }
+
 
     private void sharePdfFile(File pdfFile) {
         try {

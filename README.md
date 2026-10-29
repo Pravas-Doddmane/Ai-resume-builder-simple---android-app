@@ -117,11 +117,3 @@ Enable Firestore Database
      By signing in, you agree to our
      <a href="ADD_YOUR_PRIVACY_POLICY_URL">Privacy Policy</a>.
      </string>
-
-### Privacy Policy
-This app includes a Privacy Policy page hosted separately.
-
-# 👨‍💻 Developer
-- Pravas D S
-- Independent Android Developer
-- [play store](https://play.google.com/store/apps/developer?id=PASS+FAMILY)
